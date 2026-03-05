@@ -21,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final provider = Provider.of<QuizProvider>(context);
 
-    /// open dialog only when question changes
     if (provider.currentQuestion != null &&
         !_dialogOpen &&
         provider.currentIndex != _lastQuestionIndex) {
@@ -51,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     final quizProvider = Provider.of<QuizProvider>(context);
 
     return Scaffold(
@@ -65,43 +65,85 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
 
-            if (quizProvider.isLoading)
-              const CircularProgressIndicator()
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
 
-            else if (quizProvider.error != null)
-              Column(
-                children: [
-                  Text('Error: ${quizProvider.error}'),
-                  ElevatedButton(
-                    onPressed: quizProvider.loadQuestions,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              )
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
 
-            else if (quizProvider.questions.isEmpty)
-              ElevatedButton(
-                onPressed: quizProvider.loadQuestions,
-                child: const Text('Start Quiz'),
-              )
+              if (quizProvider.isLoading)
+                const CircularProgressIndicator()
 
-            else if (quizProvider.isQuizFinished)
-              Column(
-                children: [
-                  Text(
-                      'Quiz Finished! Score: ${quizProvider.score}'),
-                  ElevatedButton(
-                    onPressed: quizProvider.reset,
-                    child: const Text('Play Again'),
-                  ),
-                ],
-              ),
-          ],
+              else if (quizProvider.error != null)
+                Column(
+                  children: [
+                    Text('Error: ${quizProvider.error}'),
+                    ElevatedButton(
+                      onPressed: quizProvider.loadQuestions,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                )
+
+              else if (quizProvider.questions.isEmpty)
+                ElevatedButton(
+                  onPressed: quizProvider.loadQuestions,
+                  child: const Text('Start Quiz'),
+                )
+
+              else if (quizProvider.isQuizFinished)
+                Column(
+                  children: [
+
+                    Text(
+                      'Final Score: ${quizProvider.score}/${quizProvider.questions.length}',
+                      style: const TextStyle(fontSize: 22),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: quizProvider.questions.length,
+                      itemBuilder: (context, index) {
+
+                        final question = quizProvider.questions[index];
+                        final correct = question.correctAnswer;
+                        final user = quizProvider.userAnswers[index];
+                        final isCorrect = correct == user;
+
+                        return ListTile(
+                          title: Text(question.question),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Your Answer: $user"),
+                              Text("Correct Answer: $correct"),
+                            ],
+                          ),
+                          leading: Icon(
+                            isCorrect ? Icons.check : Icons.close,
+                            color: isCorrect ? Colors.green : Colors.red,
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    ElevatedButton(
+                      onPressed: quizProvider.reset,
+                      child: const Text('Play Again'),
+                    ),
+
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );

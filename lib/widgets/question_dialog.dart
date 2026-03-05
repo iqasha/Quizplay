@@ -17,73 +17,47 @@ class QuestionDialog extends StatefulWidget {
   State<QuestionDialog> createState() => _QuestionDialogState();
 }
 
-class _QuestionDialogState extends State<QuestionDialog> {
-
-  bool _nextTriggered = false; // ✅ prevents multiple navigation
-
-  Color? _getTileColor(QuizProvider provider, String answer) {
-    if (!provider.showResult) return null;
-
-    if (answer == widget.question.correctAnswer) {
-      return Colors.green.withOpacity(0.3);
-    }
-
-    if (answer == provider.selectedAnswer) {
-      return Colors.red.withOpacity(0.3);
-    }
-
-    return null;
-  }
-
-  void _handleAutoNext(QuizProvider provider) {
-    if (_nextTriggered) return; // ✅ run once only
-    if (!provider.showResult) return;
-
-    _nextTriggered = true;
-
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (!mounted) return;
-
-      Navigator.of(context).pop();
-      widget.onNext();
-    });
-  }
-
+class _QuestionDialogState extends State<QuestionDialog>{
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context){
     final quizProvider = Provider.of<QuizProvider>(context);
-
-    // ✅ safe trigger
-    _handleAutoNext(quizProvider);
 
     return AlertDialog(
       title: Text(widget.question.question),
+
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: widget.question.allAnswers.map((answer) {
-            return Container(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
-                color: _getTileColor(quizProvider, answer),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: RadioListTile<String>(
-                title: Text(answer),
-                value: answer,
-                groupValue: quizProvider.selectedAnswer,
-                onChanged: quizProvider.showResult
-                    ? null
-                    : (value) {
-                        if (value != null) {
-                          quizProvider.selectAnswer(value);
-                        }
-                      },
-              ),
+
+          children: widget.question.allAnswers.map((answer){
+            return RadioListTile<String>(
+              title: Text(answer),
+              value: answer,
+              groupValue: quizProvider.selectedAnswer,
+              onChanged: (value){
+                if(value != null){
+                  quizProvider.selectAnswer(value);
+                }
+              },
             );
           }).toList(),
         ),
       ),
+      actions: [
+        TextButton(onPressed: quizProvider.currentIndex == 0? null:(){
+          Navigator.of(context).pop();
+          quizProvider.previousQuestion();
+        }, 
+        child: const Text("Back"),
+        ),
+        ElevatedButton(
+          onPressed: quizProvider.selectedAnswer == null? null:(){
+            Navigator.of(context).pop();
+            widget.onNext();
+          }, 
+          child: const Text("Next")
+        ),
+      ],
     );
   }
 }

@@ -8,8 +8,9 @@ class QuizProvider extends ChangeNotifier{
   String? _selectedAnswer;
   bool _isLoading = false;
   String? _error;
-  bool _showResult = false;
-  bool get showResult => _showResult;
+  // bool _showResult = false;
+  // bool get showResult => _showResult;
+   List<String?> _userAnswers = [];
 
   List<Question> get questions => _questions;
   int get currentIndex => _currentIndex;
@@ -19,8 +20,11 @@ class QuizProvider extends ChangeNotifier{
   bool get isLoading => _isLoading;
   bool get isQuizFinished => _currentIndex >=  _questions.length;
 
+  List<String?> get userAnswers => _userAnswers;
+
   Question? get currentQuestion => 
-  _questions.isNotEmpty && !isQuizFinished ? _questions[_currentIndex] : null;
+  _questions.isNotEmpty && !isQuizFinished 
+  ? _questions[_currentIndex] : null;
 
   Future<void> loadQuestions({
     int amount = 10,
@@ -40,7 +44,8 @@ class QuizProvider extends ChangeNotifier{
       _currentIndex =0;
       _score = 0;
       _selectedAnswer = null;
-      _error = null;
+      _userAnswers = List.filled(_questions.length, null);
+      // _error = null;
     }catch(e){
       _error = e.toString();
       _questions = [];
@@ -51,26 +56,38 @@ class QuizProvider extends ChangeNotifier{
   }
 
   void selectAnswer(String answer) {
-    if (_showResult) return; // prevent reselection
-
     _selectedAnswer = answer;
-    _showResult = true;
+    _userAnswers[_currentIndex] = answer;
     notifyListeners();
   }
 
     void nextQuestion() {
-      if (_selectedAnswer != null) {
-        if (_selectedAnswer ==
-            _questions[_currentIndex].correctAnswer) {
-          _score++;
-        }
+      if(_currentIndex < _questions.length -1){
+        _currentIndex++;
+        _selectedAnswer = _userAnswers[_currentIndex];
+      }else{
+        calculateScore();
+        _currentIndex++;
       }
-
-      _currentIndex++;
-      _selectedAnswer = null;
-      _showResult = false; // reset
       notifyListeners();
     }
+
+  void calculateScore(){
+    _score = 0;
+    for(int i = 0; i<_questions.length; i++){
+      if(_userAnswers[i] == _questions[i].correctAnswer){
+        _score++;
+      }
+    }
+  }
+
+  void previousQuestion(){
+    if(_currentIndex > 0){
+      _currentIndex--;
+      _selectedAnswer = _userAnswers[_currentIndex];
+      notifyListeners();
+    }
+  }
 
   void reset(){
     _questions = [];
