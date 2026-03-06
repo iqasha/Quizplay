@@ -1,63 +1,131 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/quiz_provider.dart';
-import '../services/api_service.dart';
 
 class QuestionDialog extends StatefulWidget {
-  final Question question;
-  final VoidCallback onNext;
-
-  const QuestionDialog({
-    super.key,
-    required this.question,
-    required this.onNext,
-  });
+  const QuestionDialog({super.key});
 
   @override
   State<QuestionDialog> createState() => _QuestionDialogState();
 }
 
-class _QuestionDialogState extends State<QuestionDialog>{
+class _QuestionDialogState extends State<QuestionDialog> {
+
+  final PageController _controller = PageController();
+
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
+
     final quizProvider = Provider.of<QuizProvider>(context);
 
     return AlertDialog(
-      title: Text(widget.question.question),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 500,
 
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: PageView.builder(
+          controller: _controller,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: quizProvider.questions.length,
 
-          children: widget.question.allAnswers.map((answer){
-            return RadioListTile<String>(
-              title: Text(answer),
-              value: answer,
-              groupValue: quizProvider.selectedAnswer,
-              onChanged: (value){
-                if(value != null){
-                  quizProvider.selectAnswer(value);
-                }
-              },
+          itemBuilder: (context, index) {
+
+            final question = quizProvider.questions[index];
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                Text(
+                  "Question ${index + 1}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Text(
+                  question.question,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                ...question.allAnswers.map((answer) {
+
+                  return RadioListTile<String>(
+                    title: Text(answer),
+                    value: answer,
+                    groupValue: quizProvider.userAnswers[index],
+
+                    onChanged: (value) {
+                      if (value != null) {
+                        quizProvider.selectAnswerForIndex(index, value);
+                      }
+                    },
+                  );
+
+                }).toList(),
+
+                const Spacer(),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+
+                    TextButton(
+                      onPressed: index == 0
+                          ? null
+                          : () {
+
+                              _controller.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.ease,
+                              );
+
+                              quizProvider.previousQuestion();
+                            },
+                      child: const Text("Back"),
+                    ),
+
+                    ElevatedButton(
+                      onPressed: quizProvider.userAnswers[index] == null
+                          ? null
+                          : () {
+
+                              if (index == quizProvider.questions.length - 1) {
+                                quizProvider.nextQuestion(); // marks quiz finished
+                                Navigator.pop(context);
+
+                              }
+                               else {
+
+                                _controller.nextPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.ease,
+                                );
+
+                                quizProvider.nextQuestion();
+                              }
+                            },
+                      child: Text(
+                        index == quizProvider.questions.length - 1
+                            ? "Finish"
+                            : "Next",
+                      ),
+                    ),
+                  ],
+                )
+              ],
             );
-          }).toList(),
+          },
         ),
       ),
-      actions: [
-        TextButton(onPressed: quizProvider.currentIndex == 0? null:(){
-          Navigator.of(context).pop();
-          quizProvider.previousQuestion();
-        }, 
-        child: const Text("Back"),
-        ),
-        ElevatedButton(
-          onPressed: quizProvider.selectedAnswer == null? null:(){
-            Navigator.of(context).pop();
-            widget.onNext();
-          }, 
-          child: const Text("Next")
-        ),
-      ],
     );
   }
 }

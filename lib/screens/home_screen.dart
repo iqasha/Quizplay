@@ -12,41 +12,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
-  int _lastQuestionIndex = -1;
-  bool _dialogOpen = false;
+Future<void> startQuiz(BuildContext context) async{
+  final provider = Provider.of<QuizProvider>(context, listen: false);
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  await provider.loadQuestions();
 
-    final provider = Provider.of<QuizProvider>(context);
-
-    if (provider.currentQuestion != null &&
-        !_dialogOpen &&
-        provider.currentIndex != _lastQuestionIndex) {
-
-      _lastQuestionIndex = provider.currentIndex;
-      _dialogOpen = true;
-
-      Future.microtask(() {
-        if (!mounted) return;
-
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => QuestionDialog(
-            question: provider.currentQuestion!,
-            onNext: () {
-              provider.nextQuestion();
-              _dialogOpen = false;
-            },
-          ),
-        ).then((_) {
-          _dialogOpen = false;
-        });
-      });
-    }
+  if(!mounted) return;
+  if(provider.questions.isNotEmpty){
+    showDialog(context: context,
+    barrierDismissible: false, 
+    builder: (_) => const QuestionDialog(),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text('Error: ${quizProvider.error}'),
                     ElevatedButton(
-                      onPressed: quizProvider.loadQuestions,
+                      // onPressed: quizProvider.loadQuestions,
+                      onPressed: () => startQuiz(context),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -90,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               else if (quizProvider.questions.isEmpty)
                 ElevatedButton(
-                  onPressed: quizProvider.loadQuestions,
+                  onPressed: () => startQuiz(context),
                   child: const Text('Start Quiz'),
                 )
 

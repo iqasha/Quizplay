@@ -89,6 +89,11 @@ class QuizProvider extends ChangeNotifier{
     }
   }
 
+void selectAnswerForIndex(int index, String answer) {
+  _userAnswers[index] = answer;
+  notifyListeners();
+}
+
   void reset(){
     _questions = [];
     _currentIndex = 0;
